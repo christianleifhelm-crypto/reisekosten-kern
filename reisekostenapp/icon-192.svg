@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="32" fill="#1a1a2e"/>
+  <rect x="0" y="148" width="192" height="8" fill="#c9a84c"/>
+  <text x="96" y="90" font-family="serif" font-size="52" font-weight="bold" fill="#c9a84c" text-anchor="middle">RK</text>
+  <text x="96" y="130" font-family="sans-serif" font-size="18" fill="#8888aa" text-anchor="middle">Abrechnung</text>
+</svg>

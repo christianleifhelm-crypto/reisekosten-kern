@@ -1,0 +1,8 @@
+{
+  "name": "reisekostenabrechnung",
+  "version": "1.0.0",
+  "description": "Kern Drucklufttechnik – Reisekostenabrechnung",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}
