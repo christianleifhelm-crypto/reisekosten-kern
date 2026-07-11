@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#003c71">
+<title>Zeiterfassung – Kern Drucklufttechnik</title>
+<link rel="manifest" href="./manifest.json">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&family=Roboto+Condensed:wght@400;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#f4f4f4;font-family:'Open Sans',sans-serif;color:#222;min-height:100vh}
+.header{background:#003c71;border-bottom:4px solid #1a9cd8}
+.header-top{background:#fff;padding:.6rem 1.5rem;display:flex;align-items:center}
+.header-top img{height:48px;width:auto}
+.header-sub{padding:.35rem 1.5rem;font-size:.68rem;color:#a0c8e8;letter-spacing:.1em;text-transform:uppercase}
+.tabs{display:flex;background:#002d57;padding:0 1rem;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab-btn{background:none;border:none;color:#7aafd4;font-family:'Open Sans',sans-serif;font-size:.65rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:.65rem .9rem;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap;flex-shrink:0}
+.tab-btn.active{color:#ffd600;border-bottom-color:#ffd600}
+.tab-btn:hover{color:#fff}
+.content{max-width:960px;margin:1.4rem auto;padding:0 1.2rem}
+.panel{display:none}.panel.active{display:block}
+.card{background:#fff;border:1px solid #dde3ea;border-radius:3px;padding:1.2rem 1.4rem;margin-bottom:1rem;box-shadow:0 2px 8px rgba(0,60,113,.07)}
+.card-title{font-family:'Roboto Condensed',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#003c71;margin-bottom:.85rem;padding-bottom:.4rem;border-bottom:2px solid #ffd600;display:inline-block}
+.row{display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:.26rem}
+label{font-size:.61rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:#555}
+select,input[type=text],input[type=month]{font-family:'Open Sans',sans-serif;font-size:.88rem;padding:.42rem .6rem;border:1.5px solid #b0bec9;border-radius:2px;background:#f9fbfc;color:#222;outline:none}
+select:focus,input:focus{border-color:#003c71;background:#fff}
+.badge{font-size:.68rem;font-weight:600;color:#003c71;background:#e8f0f8;border:1px solid #b0cce4;border-radius:2px;padding:.35rem .7rem;align-self:flex-end;white-space:nowrap}
+.btn{font-family:'Open Sans',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:.5rem 1.1rem;border:none;border-radius:2px;cursor:pointer;white-space:nowrap}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:#003c71;color:#ffd600}.btn-primary:hover:not(:disabled){background:#002d57}
+.btn-secondary{background:#ffd600;color:#003c71}.btn-secondary:hover{background:#f0c800}
+.btn-green{background:#2e7d32;color:#fff}.btn-green:hover:not(:disabled){background:#1b5e20}
+.btn-red{background:#c62828;color:#fff}.btn-red:hover{background:#b71c1c}
+.btn-gray{background:#e0e5ea;color:#444}.btn-gray:hover{background:#cdd4db}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:3px;overflow:hidden;box-shadow:0 2px 8px rgba(0,60,113,.07);border:1px solid #dde3ea}
+thead{background:#003c71}
+th{font-family:'Roboto Condensed',sans-serif;font-size:.63rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.62rem .75rem;text-align:left;color:#ffd600;white-space:nowrap}
+td{padding:.48rem .75rem;font-size:.84rem;border-bottom:1px solid #edf0f4;white-space:nowrap}
+tbody tr:nth-child(even){background:#f5f8fb}
+tbody tr:hover{background:#e8f0f8}
+.tr-total{background:#003c71!important}
+.tr-total td{border:none;font-family:'Roboto Condensed',sans-serif;font-size:.84rem;font-weight:700;color:#ffd600;padding:.7rem .75rem}
+.empty{text-align:center;padding:2.5rem;color:#aaa;font-style:italic;background:#fff;border:1px dashed #b0bec9;border-radius:3px}
+.status-box{font-size:.78rem;border-radius:2px;padding:.55rem .85rem;font-weight:600}
+.s-ok{color:#1b5e20;background:#e8f5e9;border:1px solid #a5d6a7}
+.s-info{color:#003c71;background:#e8f0f8;border:1px solid #b0cce4}
+.s-warn{color:#e65100;background:#fff3e0;border:1px solid #ffcc80}
+.s-err{color:#b71c1c;background:#ffebee;border:1px solid #ef9a9a}
+.footer{background:#002d57;color:#7aafd4;text-align:center;font-size:.64rem;padding:.65rem;margin-top:2rem;letter-spacing:.07em}
+.footer span{color:#ffd600}
+/* Stempeluhr */
+.clock-timer{text-align:center;padding:1.2rem 0}
+.clock-timer .zeit-big{font-size:2.8rem;font-weight:700;color:#003c71;font-family:'Roboto Condensed',sans-serif;letter-spacing:.05em;line-height:1}
+.clock-timer .zeit-label{font-size:.65rem;color:#888;text-transform:uppercase;letter-spacing:.12em;margin-top:.3rem}
+.clock-btns{display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center;margin-top:.8rem}
+.clock-btns .btn{flex:1;min-width:130px;padding:.75rem 1rem;font-size:.78rem}
+/* Heute Summary */
+.zeit-row{display:flex;justify-content:space-between;align-items:center;padding:.38rem 0;border-bottom:1px solid #f0f0f0;font-size:.88rem}
+.zeit-row:last-child{border-bottom:none}
+.zeit-row-lbl{color:#666;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.zeit-row-val{font-weight:600;color:#222}
+.zeit-total{border-top:2px solid #ffd600!important;margin-top:.3rem;padding-top:.5rem!important}
+.zeit-total .zeit-row-lbl{color:#003c71}
+.zeit-total .zeit-row-val{color:#003c71;font-size:1rem}
+/* User widget */
+.user-bar{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.user-name-badge{background:#003c71;color:#ffd600;font-family:'Roboto Condensed',sans-serif;font-weight:700;font-size:.9rem;padding:.4rem .9rem;border-radius:2px;letter-spacing:.04em}
+/* Tag-wrap for MA */
+.tag-wrap{display:flex;flex-wrap:wrap;gap:.38rem;margin-top:.55rem}
+.tag{display:flex;align-items:center;gap:.32rem;background:#e8f0f8;border:1px solid #b0cce4;border-radius:2px;padding:.2rem .32rem .2rem .55rem;font-size:.78rem;color:#003c71}
+.tag button{background:none;border:none;cursor:pointer;color:#7aafd4;font-size:.95rem;line-height:1;padding:0}
+.tag button:hover{color:#c62828}
+@media(max-width:580px){
+  .header-top{padding:.5rem .8rem}
+  .header-top img{height:38px}
+  .content{padding:0 .7rem;margin:1rem auto}
+  .card{padding:.9rem .9rem}
+  th,td{padding:.42rem .5rem;font-size:.76rem}
+  .clock-timer .zeit-big{font-size:2.2rem}
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-top">
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAAyCAYAAAAZUl3sAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAABi9JREFUeNrsXU9oE0EUfjM7SUqrtFIUDx6EiIoHwYMHL+LBgxdBQcGLIC+IIIIHoYI/oIgggoiIiIggIiKiiIiIiIiIiIqIiIiIqIiIqCgiIiKqiIiIqCIiqqioqCIiKioiIiIqKiqqqqqIqoiKiIiKiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiAQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAbSPZBtAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAfT5K8AAMaIbEJFkI6EAAAAASUVORK5CYII=" alt="Kern Drucklufttechnik" style="height:48px;width:auto">
+  </div>
+  <div class="header-sub">Zeiterfassung · Mitarbeiter-Tool <span id="syncIndicator" style="float:right;font-size:.6rem;color:#ffd600"></span></div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" id="tab-heute"      onclick="switchTab('heute',this)">Heute</button>
+  <button class="tab-btn"        id="tab-uebersicht" onclick="switchTab('uebersicht',this)">Übersicht</button>
+  <button class="tab-btn"        id="tab-ma"         onclick="switchTab('ma',this)">👤 Mitarbeiter</button>
+</div>
+
+<div class="content">
+
+<!-- ═══════ HEUTE ═══════════════════════════════════════════════ -->
+<div class="panel active" id="panel-heute">
+
+  <div class="card">
+    <div class="card-title">Mitarbeiter</div>
+    <div id="userWidget">
+      <div class="row">
+        <div class="field" style="flex:1;min-width:180px">
+          <label>Mitarbeiter wählen</label>
+          <select id="userSelect" onchange="selectUser(this.value)">
+            <option value="">— bitte wählen —</option>
+          </select>
+        </div>
+      </div>
+      <div id="activeUserBar" style="display:none;margin-top:.6rem">
+        <div class="user-bar">
+          <span class="user-name-badge" id="activeUserName"></span>
+          <button class="btn btn-gray" style="font-size:.65rem" onclick="changeUser()">wechseln</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Stempeluhr</div>
+    <div id="statusBox" class="status-box s-info" style="margin-bottom:.8rem">Kein Mitarbeiter ausgewählt</div>
+
+    <div class="clock-timer" id="timerArea" style="display:none">
+      <div class="zeit-big" id="timerDisplay">0:00:00</div>
+      <div class="zeit-label" id="timerLabel">Arbeitszeit heute</div>
+    </div>
+
+    <div class="clock-btns" id="clockBtns"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Heutiger Eintrag</div>
+    <div id="todaySummary"><div class="empty">Noch keine Einträge für heute.</div></div>
+  </div>
+
+</div><!-- /panel-heute -->
+
+<!-- ═══════ ÜBERSICHT ════════════════════════════════════════════ -->
+<div class="panel" id="panel-uebersicht">
+
+  <div class="card">
+    <div class="card-title">Monatsübersicht</div>
+    <div class="row" style="margin-bottom:1.1rem;align-items:flex-end;gap:.6rem">
+      <div class="field">
+        <label>Monat</label>
+        <input type="month" id="monthFilter" onchange="loadOverview()">
+      </div>
+      <div class="field" style="flex:1;min-width:160px">
+        <label>Mitarbeiter</label>
+        <select id="overviewUser" onchange="loadOverview()">
+          <option value="">— wählen —</option>
+        </select>
+      </div>
+      <button class="btn btn-secondary" onclick="exportPDF()" id="pdfBtn" disabled>PDF</button>
+    </div>
+    <div id="overviewTable"><div class="empty">Bitte Monat und Mitarbeiter wählen.</div></div>
+    <div class="sum-line" id="overviewSum" style="margin-top:.5rem;display:none"></div>
+  </div>
+
+</div><!-- /panel-uebersicht -->
+
+<!-- ═══════ MITARBEITER ══════════════════════════════════════════ -->
+<div class="panel" id="panel-ma">
+
+  <div class="card">
+    <div class="card-title">Mitarbeiter hinzufügen</div>
+    <div class="row">
+      <div class="field" style="flex:1">
+        <label>Name</label>
+        <input type="text" id="newMaName" placeholder="Vor- und Nachname" onkeydown="if(event.key==='Enter')addUser()">
+      </div>
+      <button class="btn btn-primary" onclick="addUser()">Hinzufügen</button>
+    </div>
+    <div id="maStatus" style="margin-top:.6rem"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Mitarbeiterliste</div>
+    <div id="maList"><div class="empty">Keine Mitarbeiter vorhanden.</div></div>
+  </div>
+
+</div><!-- /panel-ma -->
+
+</div><!-- /content -->
+
+<div class="footer">Kern Drucklufttechnik · <span>Zeiterfassung</span></div>
+
+<script>
+// ── Constants ────────────────────────────────────────────────
+const API_USERS = '/api/data?key=users';
+const API_ZEIT  = '/api/zeit';
+const LS_USER   = 'zt_user';
+const LS_DATA   = 'zt_data';   // cache: {user, month, records}
+
+// ── State ────────────────────────────────────────────────────
+let users        = [];
+let activeUser   = null;
+let monthRecords = [];   // [{datum, ereignisse:[{typ,zeit,ts}]}] for current month
+let timerInt     = null;
+let overviewData = [];
+
+// ── Utilities ────────────────────────────────────────────────
+function todayStr() {
+  return new Date().toISOString().slice(0,10);
+}
+function monthStr(date) {
+  return (date || new Date()).toISOString().slice(0,7);
+}
+function nowTime() {
+  const d = new Date();
+  return d.toTimeString().slice(0,5);
+}
+function ts2mins(ts) {
+  const d = new Date(ts);
+  return d.getHours()*60 + d.getMinutes() + d.getSeconds()/60;
+}
+function minsToHHMM(m) {
+  const h = Math.floor(m/60);
+  const mm = Math.floor(m%60);
+  return `${h}:${String(mm).padStart(2,'0')}`;
+}
+function secsToClock(s) {
+  const h  = Math.floor(s/3600);
+  const m  = Math.floor((s%3600)/60);
+  const ss = Math.floor(s%60);
+  return `${h}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+}
+function dateToDEStr(datum) {
+  const [y,mo,d] = datum.split('-');
+  return `${d}.${mo}.${y}`;
+}
+function weekdayShort(datum) {
+  return ['So','Mo','Di','Mi','Do','Fr','Sa'][new Date(datum).getDay()];
+}
+function syncInd(msg,ok) {
+  const el = document.getElementById('syncIndicator');
+  el.textContent = msg;
+  el.style.color = ok ? '#a5d6a7' : '#ef9a9a';
+  if (ok) setTimeout(()=>{ el.textContent=''; }, 3000);
+}
+
+// ── API ──────────────────────────────────────────────────────
+async function fetchUsers() {
+  try {
+    const r = await fetch(API_USERS);
+    users = await r.json();
+    if (!Array.isArray(users)) users = [];
+  } catch(e) { users = []; }
+}
+async function saveUsers() {
+  try {
+    await fetch(API_USERS, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(users)
+    });
+  } catch(e) {}
+}
+async function fetchMonthRecords(user, month) {
+  try {
+    const r = await fetch(`${API_ZEIT}?user=${encodeURIComponent(user)}&month=${month}`);
+    return await r.json();
+  } catch(e) { return []; }
+}
+async function saveMonthRecords(user, month, records) {
+  try {
+    syncInd('↑ Speichern…', true);
+    await fetch(`${API_ZEIT}?user=${encodeURIComponent(user)}&month=${month}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(records)
+    });
+    syncInd('✓ Gespeichert', true);
+  } catch(e) { syncInd('✗ Fehler', false); }
+}
+
+// ── Today's record helpers ───────────────────────────────────
+function getTodayRecord() {
+  const t = todayStr();
+  return monthRecords.find(r => r.datum === t) || null;
+}
+function getTodayEreignisse() {
+  return (getTodayRecord()?.ereignisse) || [];
+}
+function getStatus() {
+  const erg = getTodayEreignisse();
+  if (!erg.length) return 'IDLE';
+  const last = erg[erg.length-1].typ;
+  if (last === 'gehen')       return 'DONE';
+  if (last === 'pause_start') return 'PAUSED';
+  return 'WORKING';
+}
+
+function calcSecondsFromEreignisse(erg, upToNow) {
+  let kommenTs=null, pauseStartTs=null, pauseTotalMs=0, gehenTs=null;
+  for (const e of erg) {
+    if (e.typ==='kommen')      kommenTs=e.ts;
+    if (e.typ==='pause_start') pauseStartTs=e.ts;
+    if (e.typ==='pause_end' && pauseStartTs!=null) {
+      pauseTotalMs += e.ts - pauseStartTs;
+      pauseStartTs = null;
+    }
+    if (e.typ==='gehen') gehenTs=e.ts;
+  }
+  if (!kommenTs) return 0;
+  const now = Date.now();
+  let endTs;
+  if (gehenTs) {
+    endTs = gehenTs;
+  } else if (upToNow) {
+    if (pauseStartTs!=null) {
+      // currently paused: freeze timer at pause start
+      endTs = pauseStartTs;
+    } else {
+      endTs = now;
+    }
+  } else {
+    return 0;
+  }
+  return Math.max(0, Math.floor((endTs - kommenTs - pauseTotalMs)/1000));
+}
+
+function calcPauseSecondsFromEreignisse(erg) {
+  let pauseStartTs=null, total=0;
+  const now = Date.now();
+  for (const e of erg) {
+    if (e.typ==='pause_start') pauseStartTs=e.ts;
+    if (e.typ==='pause_end' && pauseStartTs!=null) {
+      total += e.ts - pauseStartTs;
+      pauseStartTs=null;
+    }
+  }
+  if (pauseStartTs!=null) total += now - pauseStartTs;
+  return Math.floor(total/1000);
+}
+
+// ── Actions ──────────────────────────────────────────────────
+async function addEreignis(typ) {
+  if (!activeUser) return;
+  const today = todayStr();
+  const now = Date.now();
+  const zeit = nowTime();
+
+  let record = getTodayRecord();
+  if (!record) {
+    record = { datum: today, ereignisse: [] };
+    monthRecords.push(record);
+  }
+  record.ereignisse.push({ typ, zeit, ts: now });
+
+  // cache to localStorage
+  try {
+    localStorage.setItem(LS_DATA, JSON.stringify({
+      user: activeUser, month: monthStr(), records: monthRecords
+    }));
+  } catch(e) {}
+
+  renderHeutePanel();
+
+  const month = today.slice(0,7);
+  await saveMonthRecords(activeUser, month, monthRecords);
+}
+
+function clockIn()    { if (getStatus()==='IDLE')    addEreignis('kommen'); }
+function startPause() { if (getStatus()==='WORKING') addEreignis('pause_start'); }
+function endPause()   { if (getStatus()==='PAUSED')  addEreignis('pause_end'); }
+function clockOut()   {
+  if (getStatus()==='WORKING') {
+    if (confirm('Arbeitstag jetzt beenden?')) addEreignis('gehen');
+  }
+}
+
+// ── Render: Heute ────────────────────────────────────────────
+function renderHeutePanel() {
+  const status = getStatus();
+  const erg    = getTodayEreignisse();
+
+  // Status box
+  const sb = document.getElementById('statusBox');
+  if (!activeUser) {
+    sb.textContent = 'Kein Mitarbeiter ausgewählt';
+    sb.className = 'status-box s-info';
+  } else {
+    switch(status) {
+      case 'IDLE':
+        sb.textContent = 'Noch nicht gestempelt';
+        sb.className = 'status-box s-info'; break;
+      case 'WORKING': {
+        const k = erg.find(e=>e.typ==='kommen');
+        sb.textContent = `Arbeitet seit ${k?.zeit||''}`;
+        sb.className = 'status-box s-ok'; break;
+      }
+      case 'PAUSED': {
+        const p = [...erg].reverse().find(e=>e.typ==='pause_start');
+        sb.textContent = `Pause seit ${p?.zeit||''}`;
+        sb.className = 'status-box s-warn'; break;
+      }
+      case 'DONE':
+        sb.textContent = 'Arbeitstag beendet ✓';
+        sb.className = 'status-box s-ok'; break;
+    }
+  }
+
+  // Timer area
+  const timerArea = document.getElementById('timerArea');
+  if (activeUser && status !== 'IDLE') {
+    timerArea.style.display = 'block';
+    document.getElementById('timerLabel').textContent =
+      status === 'PAUSED' ? 'Arbeitszeit (pausiert)' : 'Arbeitszeit heute';
+    updateTimer();
+  } else {
+    timerArea.style.display = 'none';
+  }
+
+  // Buttons
+  const btns = document.getElementById('clockBtns');
+  btns.innerHTML = '';
+  if (!activeUser) return;
+
+  const mk = (txt, cls, fn) => {
+    const b = document.createElement('button');
+    b.className = `btn ${cls}`;
+    b.textContent = txt;
+    b.onclick = fn;
+    btns.appendChild(b);
+  };
+
+  switch(status) {
+    case 'IDLE':
+      mk('▶ Kommen', 'btn-green', clockIn); break;
+    case 'WORKING':
+      mk('⏸ Pause',  'btn-secondary', startPause);
+      mk('⏹ Gehen',  'btn-red',       clockOut); break;
+    case 'PAUSED':
+      mk('▶ Weiter', 'btn-green', endPause); break;
+    case 'DONE':
+      break;
+  }
+
+  // Clear and restart interval
+  if (timerInt) { clearInterval(timerInt); timerInt=null; }
+  if (activeUser && (status==='WORKING'||status==='PAUSED')) {
+    timerInt = setInterval(updateTimer, 1000);
+  }
+
+  // Summary card
+  renderTodaySummary(erg);
+}
+
+function updateTimer() {
+  const erg = getTodayEreignisse();
+  const s = calcSecondsFromEreignisse(erg, true);
+  document.getElementById('timerDisplay').textContent = secsToClock(s);
+}
+
+function renderTodaySummary(erg) {
+  const el = document.getElementById('todaySummary');
+  if (!erg.length) {
+    el.innerHTML = '<div class="empty">Noch keine Einträge für heute.</div>';
+    return;
+  }
+
+  const rows = [];
+  const kommenE = erg.find(e=>e.typ==='kommen');
+  const gehenE  = erg.find(e=>e.typ==='gehen');
+
+  if (kommenE) rows.push(summRow('Kommen', kommenE.zeit+' Uhr'));
+
+  // Pause pairs
+  let ps=null, pairs=[];
+  for (const e of erg) {
+    if (e.typ==='pause_start') ps=e;
+    else if (e.typ==='pause_end' && ps) { pairs.push({s:ps,e}); ps=null; }
+  }
+  if (ps) pairs.push({s:ps, e:null});
+
+  for (const p of pairs) {
+    const val = p.e ? `${p.s.zeit} – ${p.e.zeit} Uhr` : `${p.s.zeit} Uhr – läuft`;
+    rows.push(summRow('Pause', val));
+  }
+
+  if (gehenE) rows.push(summRow('Gehen', gehenE.zeit+' Uhr'));
+
+  // Arbeitszeit
+  const workSecs = calcSecondsFromEreignisse(erg, getStatus()!=='DONE');
+  const workMins = Math.floor(workSecs/60);
+  if (workMins > 0 || gehenE) {
+    rows.push(`<div class="zeit-row zeit-total">
+      <span class="zeit-row-lbl">Arbeitszeit</span>
+      <span class="zeit-row-val">${minsToHHMM(workMins)} h</span>
+    </div>`);
+  }
+
+  el.innerHTML = rows.join('');
+}
+
+function summRow(lbl, val) {
+  return `<div class="zeit-row">
+    <span class="zeit-row-lbl">${lbl}</span>
+    <span class="zeit-row-val">${val}</span>
+  </div>`;
+}
+
+// ── Tab switching ────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  btn.classList.add('active');
+  if (name==='uebersicht') initOverviewPanel();
+  if (name==='ma') renderMaPanel();
+}
+
+// ── User management ──────────────────────────────────────────
+function renderUserSelects() {
+  ['userSelect','overviewUser'].forEach(id => {
+    const sel = document.getElementById(id);
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">— bitte wählen —</option>';
+    users.sort().forEach(u => {
+      const o = document.createElement('option');
+      o.value = u; o.textContent = u;
+      if (u===cur) o.selected=true;
+      sel.appendChild(o);
+    });
+  });
+}
+
+async function selectUser(name) {
+  if (!name) return;
+  activeUser = name;
+  try { localStorage.setItem(LS_USER, name); } catch(e) {}
+
+  document.getElementById('activeUserName').textContent = name;
+  document.getElementById('userSelect').style.display = 'none';
+  document.getElementById('activeUserBar').style.display = 'block';
+
+  // Load this month
+  const month = monthStr();
+  let cached = null;
+  try {
+    const raw = localStorage.getItem(LS_DATA);
+    if (raw) {
+      const c = JSON.parse(raw);
+      if (c.user===name && c.month===month) cached = c.records;
+    }
+  } catch(e) {}
+  monthRecords = cached || [];
+  renderHeutePanel();
+
+  // Fetch from API and update
+  const fresh = await fetchMonthRecords(name, month);
+  if (Array.isArray(fresh)) {
+    monthRecords = fresh;
+    try { localStorage.setItem(LS_DATA, JSON.stringify({user:name,month,records:fresh})); } catch(e) {}
+    renderHeutePanel();
+  }
+}
+
+function changeUser() {
+  activeUser = null;
+  monthRecords = [];
+  document.getElementById('activeUserBar').style.display = 'none';
+  document.getElementById('userSelect').style.display = '';
+  document.getElementById('userSelect').value = '';
+  if (timerInt) { clearInterval(timerInt); timerInt=null; }
+  renderHeutePanel();
+}
+
+// ── Mitarbeiter panel ────────────────────────────────────────
+function renderMaPanel() {
+  const el = document.getElementById('maList');
+  if (!users.length) {
+    el.innerHTML = '<div class="empty">Keine Mitarbeiter vorhanden.</div>';
+    return;
+  }
+  const tags = users.sort().map(u =>
+    `<span class="tag">${u}
+      <button title="Entfernen" onclick="removeUser('${u.replace(/'/g,"\\'")}')">×</button>
+    </span>`
+  ).join('');
+  el.innerHTML = `<div class="tag-wrap">${tags}</div>`;
+}
+
+async function addUser() {
+  const inp = document.getElementById('newMaName');
+  const name = inp.value.trim();
+  if (!name) return;
+  if (users.includes(name)) {
+    showMaStatus('Mitarbeiter bereits vorhanden.', false);
+    return;
+  }
+  users.push(name);
+  inp.value = '';
+  renderUserSelects();
+  renderMaPanel();
+  await saveUsers();
+  showMaStatus(`"${name}" hinzugefügt.`, true);
+}
+
+async function removeUser(name) {
+  if (!confirm(`"${name}" wirklich entfernen?`)) return;
+  users = users.filter(u=>u!==name);
+  renderUserSelects();
+  renderMaPanel();
+  if (activeUser===name) changeUser();
+  await saveUsers();
+}
+
+function showMaStatus(msg, ok) {
+  const el = document.getElementById('maStatus');
+  el.className = 'status-box '+(ok?'s-ok':'s-err');
+  el.textContent = msg;
+  setTimeout(()=>{ el.textContent=''; el.className=''; }, 3000);
+}
+
+// ── Overview panel ───────────────────────────────────────────
+function initOverviewPanel() {
+  const mf = document.getElementById('monthFilter');
+  if (!mf.value) mf.value = monthStr();
+  const ou = document.getElementById('overviewUser');
+  if (!ou.value && activeUser) ou.value = activeUser;
+  if (mf.value && ou.value) loadOverview();
+}
+
+async function loadOverview() {
+  const month = document.getElementById('monthFilter').value;
+  const user  = document.getElementById('overviewUser').value;
+  const pdfBtn = document.getElementById('pdfBtn');
+  const tbl    = document.getElementById('overviewTable');
+  const sumEl  = document.getElementById('overviewSum');
+  pdfBtn.disabled = true;
+  sumEl.style.display = 'none';
+
+  if (!month || !user) {
+    tbl.innerHTML = '<div class="empty">Bitte Monat und Mitarbeiter wählen.</div>';
+    return;
+  }
+
+  tbl.innerHTML = '<div class="empty">Lade…</div>';
+  const records = await fetchMonthRecords(user, month);
+  overviewData = Array.isArray(records) ? records : [];
+
+  if (!overviewData.length) {
+    tbl.innerHTML = '<div class="empty">Keine Einträge für diesen Monat.</div>';
+    return;
+  }
+
+  let totalMins = 0;
+  const rows = overviewData
+    .slice().sort((a,b)=>a.datum.localeCompare(b.datum))
+    .map(rec => {
+      const erg = rec.ereignisse || [];
+      const kommenE = erg.find(e=>e.typ==='kommen');
+      const gehenE  = erg.find(e=>e.typ==='gehen');
+
+      let pauseTotalMins = 0;
+      let ps = null;
+      for (const e of erg) {
+        if (e.typ==='pause_start') ps=e.ts;
+        else if (e.typ==='pause_end' && ps!=null) {
+          pauseTotalMins += (e.ts - ps)/60000;
+          ps=null;
+        }
+      }
+
+      const workSecs = calcSecondsFromEreignisse(erg, false);
+      const workMins = Math.floor(workSecs/60);
+      totalMins += workMins;
+
+      return `<tr>
+        <td>${weekdayShort(rec.datum)}</td>
+        <td>${dateToDEStr(rec.datum)}</td>
+        <td>${kommenE?kommenE.zeit:'—'}</td>
+        <td>${gehenE?gehenE.zeit:'—'}</td>
+        <td>${pauseTotalMins>0?minsToHHMM(pauseTotalMins)+' h':'—'}</td>
+        <td><strong>${workMins>0?minsToHHMM(workMins)+' h':'—'}</strong></td>
+      </tr>`;
+    }).join('');
+
+  tbl.innerHTML = `<div style="overflow-x:auto"><table>
+    <thead><tr>
+      <th>Tag</th><th>Datum</th><th>Kommen</th><th>Gehen</th><th>Pause</th><th>Arbeitszeit</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr class="tr-total">
+      <td colspan="5">Gesamt</td>
+      <td>${minsToHHMM(totalMins)} h</td>
+    </tr></tfoot>
+  </table></div>`;
+
+  sumEl.textContent = `${overviewData.length} Arbeitstage · ${minsToHHMM(totalMins)} h gesamt`;
+  sumEl.style.display = 'block';
+  pdfBtn.disabled = false;
+}
+
+// ── PDF Export ───────────────────────────────────────────────
+function exportPDF() {
+  const month = document.getElementById('monthFilter').value;
+  const user  = document.getElementById('overviewUser').value;
+  if (!month || !user || !overviewData.length) return;
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+
+  const [y,m] = month.split('-');
+  const mName = new Date(month+'-01').toLocaleString('de',{month:'long',year:'numeric'});
+
+  doc.setFontSize(18);
+  doc.setTextColor(0,60,113);
+  doc.text('Zeiterfassung – Monatsbericht', 14, 20);
+
+  doc.setFontSize(10);
+  doc.setTextColor(80,80,80);
+  doc.text(`Mitarbeiter: ${user}`, 14, 30);
+  doc.text(`Monat: ${mName}`, 14, 36);
+  doc.text(`Kern Drucklufttechnik GmbH`, 14, 42);
+
+  let totalMins = 0;
+  const tableRows = overviewData
+    .slice().sort((a,b)=>a.datum.localeCompare(b.datum))
+    .map(rec => {
+      const erg = rec.ereignisse||[];
+      const k = erg.find(e=>e.typ==='kommen');
+      const g = erg.find(e=>e.typ==='gehen');
+      let pMins=0, ps=null;
+      for (const e of erg) {
+        if (e.typ==='pause_start') ps=e.ts;
+        else if (e.typ==='pause_end'&&ps!=null){pMins+=(e.ts-ps)/60000;ps=null;}
+      }
+      const wSecs = calcSecondsFromEreignisse(erg,false);
+      const wMins = Math.floor(wSecs/60);
+      totalMins += wMins;
+      return [
+        weekdayShort(rec.datum),
+        dateToDEStr(rec.datum),
+        k?k.zeit:'—',
+        g?g.zeit:'—',
+        pMins>0?minsToHHMM(pMins)+' h':'—',
+        wMins>0?minsToHHMM(wMins)+' h':'—'
+      ];
+    });
+
+  doc.autoTable({
+    startY: 50,
+    head: [['Tag','Datum','Kommen','Gehen','Pause','Arbeitszeit']],
+    body: tableRows,
+    foot: [['','','','','Gesamt', minsToHHMM(totalMins)+' h']],
+    headStyles: { fillColor:[0,60,113], textColor:[255,214,0], fontStyle:'bold', fontSize:9 },
+    footStyles: { fillColor:[0,60,113], textColor:[255,214,0], fontStyle:'bold', fontSize:9 },
+    bodyStyles: { fontSize:9 },
+    alternateRowStyles: { fillColor:[245,248,251] },
+    styles: { cellPadding:3 }
+  });
+
+  const finalY = doc.lastAutoTable.finalY + 20;
+  doc.setFontSize(9);
+  doc.setTextColor(120,120,120);
+  doc.text('Unterschrift Mitarbeiter: ________________________________', 14, finalY);
+  doc.text(`Datum: ________________`, 14, finalY+10);
+
+  doc.save(`Zeiterfassung_${user.replace(/\s+/g,'_')}_${month}.pdf`);
+}
+
+// ── Init ─────────────────────────────────────────────────────
+async function init() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  }
+
+  await fetchUsers();
+  renderUserSelects();
+  renderMaPanel();
+
+  // Set default month filter
+  document.getElementById('monthFilter').value = monthStr();
+
+  // Restore saved user
+  let saved = null;
+  try { saved = localStorage.getItem(LS_USER); } catch(e) {}
+  if (saved && users.includes(saved)) {
+    document.getElementById('userSelect').value = saved;
+    await selectUser(saved);
+  } else {
+    renderHeutePanel();
+  }
+}
+
+init();
+</script>
+</body>
+</html>
