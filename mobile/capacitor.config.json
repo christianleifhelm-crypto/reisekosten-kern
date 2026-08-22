@@ -1,0 +1,11 @@
+{
+  "appId": "de.kern.aussendienst",
+  "appName": "Kern Außendienst",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}
