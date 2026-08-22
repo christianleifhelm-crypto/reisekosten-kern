@@ -189,6 +189,7 @@ tbody tr:hover{background:#e8f0f8}
     <div class="method-row">
       <button class="btn btn-primary" id="mBtn1" onclick="setLocMethod('manual')">✏️ Manuell</button>
       <button class="btn btn-gray"    id="mBtn2" onclick="setLocMethod('url')">🔗 Maps URL</button>
+      <button class="btn btn-gray"    id="mBtn3" onclick="setLocMethod('gps')">📍 GPS</button>
     </div>
     <div id="loc-manual">
       <p style="font-size:.83rem;color:#555;margin-bottom:.8rem">Ortsnamen direkt eingeben.</p>
@@ -207,6 +208,10 @@ tbody tr:hover{background:#e8f0f8}
         </div>
         <button class="btn btn-primary" onclick="locExtractUrl()" style="align-self:flex-end">Extrahieren</button>
       </div>
+    </div>
+    <div id="loc-gps" style="display:none">
+      <p style="font-size:.83rem;color:#555;margin-bottom:.8rem">GPS-Standort ermitteln und Ort hinzufügen.<br><span style="font-size:.74rem;color:#888">Der Ortsname wird auf dem Gerät ermittelt – es werden keine Standortdaten an Dritte gesendet.</span></p>
+      <button class="btn btn-primary" id="gpsBtn" onclick="locGetGPS()">📍 GPS-Standort ermitteln</button>
     </div>
     <div id="locStatus"></div>
     <div style="margin-top:1.1rem;border-top:1px solid #edf0f4;padding-top:.9rem">
@@ -619,15 +624,16 @@ function exportCities(){
   deliverBase64(b64FromString(json), "staedte.json", "application/json");
 }
 
-// ── Ort hinzufügen: manuell / Maps-URL ──
+// ── Ort hinzufügen: manuell / Maps-URL / GPS ──
 function setLocMethod(m){
-  ["manual","url"].forEach(x=>{
+  ["manual","url","gps"].forEach(x=>{
     const el=document.getElementById("loc-"+x);
     if(el) el.style.display = (x===m)?"block":"none";
   });
-  const b1=document.getElementById("mBtn1"), b2=document.getElementById("mBtn2");
+  const b1=document.getElementById("mBtn1"), b2=document.getElementById("mBtn2"), b3=document.getElementById("mBtn3");
   if(b1) b1.className = "btn "+(m==="manual"?"btn-primary":"btn-gray");
   if(b2) b2.className = "btn "+(m==="url"?"btn-primary":"btn-gray");
+  if(b3) b3.className = "btn "+(m==="gps"?"btn-primary":"btn-gray");
 }
 function showLocStatus(msg,type){
   const cls=type==="err"?"s-err":(type==="info"?"s-info":"s-ok");
@@ -646,6 +652,51 @@ function locExtractUrl(){
   m=url.match(/[?&]q=([^&]+)/);
   if(m){ const c=decodeURIComponent(m[1]).replace(/\+/g," ").split(",")[0].trim(); if(c){ if(addCity(c)) showLocStatus('✓ "'+c+'" hinzugefügt!'); else showLocStatus("ℹ️ Bereits in der Liste.","info"); document.getElementById("locUrlInp").value=""; return; } }
   showLocStatus("❌ Kein Ortsname erkannt. Bitte die lange URL aus der Adressleiste kopieren.","err");
+}
+
+// ── GPS ──
+// In der App übernimmt Android die Ortsauflösung (nativer Geocoder), damit
+// kein Standort an einen fremden Dienst geht. Im Browser bleibt der bisherige
+// Weg über navigator.geolocation als Rückfallebene erhalten.
+function hasNativeLocation(){
+  try { return typeof AndroidLocation!=="undefined" && AndroidLocation && AndroidLocation.isAvailable(); }
+  catch(e){ return false; }
+}
+
+function gpsBusy(on){
+  const btn=document.getElementById("gpsBtn");
+  if(!btn) return;
+  btn.disabled=on;
+  btn.textContent = on ? "Ermittle..." : "📍 GPS-Standort ermitteln";
+}
+
+// Rückkanal aus Android
+window.onGpsCity = function(res){
+  gpsBusy(false);
+  const ort = res && res.city;
+  const err = res && res.error;
+  if(ort){
+    if(addCity(ort)) showLocStatus('✓ "'+ort+'" per GPS hinzugefügt!');
+    else showLocStatus('ℹ️ "'+ort+'" ist bereits in der Liste.',"info");
+  } else {
+    showLocStatus("❌ "+(err||"Kein Ortsname gefunden."),"err");
+  }
+};
+
+function locGetGPS(){
+  gpsBusy(true);
+  showLocStatus("Standort wird ermittelt…","info");
+
+  if(hasNativeLocation()){
+    try { AndroidLocation.requestCity(); }
+    catch(e){ gpsBusy(false); showLocStatus("❌ Standortdienst nicht erreichbar.","err"); }
+    return;
+  }
+
+  // Außerhalb der App (z. B. im Browser) gibt es keine Ortsauflösung,
+  // weil dafür ein Onlinedienst nötig wäre. Manuell und Maps-URL bleiben.
+  gpsBusy(false);
+  showLocStatus("GPS steht nur in der App zur Verfügung. Hier bitte „Manuell“ oder „Maps URL“ verwenden.","info");
 }
 
 // ═══════════════════════════════════════════════════════════

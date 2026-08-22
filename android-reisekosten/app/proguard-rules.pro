@@ -3,3 +3,6 @@
 -keepclassmembers class de.kern.reisekosten.FileExportBridge {
     @android.webkit.JavascriptInterface <methods>;
 }
+-keepclassmembers class de.kern.reisekosten.LocationBridge {
+    @android.webkit.JavascriptInterface <methods>;
+}
