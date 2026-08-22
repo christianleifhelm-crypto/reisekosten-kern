@@ -1,0 +1,5 @@
+APK aus Lauf #4
+Commit:  97335e79eee8d83d2e5fed8f9b91f39a36e36864
+Gebaut:  2026-08-22 20:39 UTC
+Groesse: 3.9M
+SHA256:  2874d0114ea060fdb48114f417e7eb76e8efc0ef59283f684dff12af0019d559
