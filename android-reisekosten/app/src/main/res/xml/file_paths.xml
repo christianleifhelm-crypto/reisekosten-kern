@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Öffentlicher Downloads-Ordner (nur bis Android 9 genutzt). -->
+    <external-path
+        name="downloads"
+        path="Download/" />
+
+    <!-- Ausweichort, wenn die Berechtigung fehlt. -->
+    <external-files-path
+        name="app_downloads"
+        path="Download/" />
+</paths>

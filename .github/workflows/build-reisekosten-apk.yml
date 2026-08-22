@@ -1,0 +1,41 @@
+name: Reisekosten-APK bauen
+
+on:
+  push:
+    paths:
+      - 'android-reisekosten/**'
+      - '.github/workflows/build-reisekosten-apk.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Java einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Android SDK einrichten
+        uses: android-actions/setup-android@v3
+
+      - name: Gradle einrichten
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: APK bauen
+        working-directory: android-reisekosten
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: APK bereitstellen
+        uses: actions/upload-artifact@v4
+        with:
+          name: reisekosten-apk
+          path: android-reisekosten/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
