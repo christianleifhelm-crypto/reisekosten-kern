@@ -17,8 +17,15 @@ Die APK liegt anschließend unter
 installieren. Eine Signierung ist dafür nicht nötig.
 
 Gebaut wird außerdem bei jedem Push über GitHub Actions
-(`.github/workflows/build-reisekosten-apk.yml`); die fertige APK hängt
-dort als Artefakt am Lauf.
+(`.github/workflows/build-reisekosten-apk.yml`).
+
+Die fertige APK liegt danach an zwei Stellen:
+
+- **`dist/reisekosten.apk`** im Repository — ohne Anmeldung erreichbar,
+  daneben `dist/APK-INFO.txt` mit Build-Zeitpunkt, Commit und
+  SHA256-Prüfsumme
+- als Artefakt am jeweiligen Lauf unter *Actions* — dieser Download
+  setzt eine Anmeldung bei GitHub voraus
 
 ## Aufbau
 
