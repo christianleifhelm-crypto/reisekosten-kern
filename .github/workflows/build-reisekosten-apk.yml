@@ -7,6 +7,9 @@ on:
       - '.github/workflows/build-reisekosten-apk.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -14,6 +17,8 @@ jobs:
     steps:
       - name: Repository auschecken
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
 
       - name: Java einrichten
         uses: actions/setup-java@v4
@@ -39,3 +44,29 @@ jobs:
           name: reisekosten-apk
           path: android-reisekosten/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+      # Zusätzlich ins Repository legen. Der Artifact-Download setzt eine
+      # GitHub-Anmeldung voraus; als Datei im Repo kommt jeder direkt heran.
+      - name: APK ins Repository legen
+        run: |
+          set -e
+          SRC=android-reisekosten/app/build/outputs/apk/debug/app-debug.apk
+          test -f "$SRC"
+          mkdir -p dist
+          cp "$SRC" dist/reisekosten.apk
+          {
+            echo "APK aus Lauf #${{ github.run_number }}"
+            echo "Commit:  ${{ github.sha }}"
+            echo "Gebaut:  $(date -u '+%Y-%m-%d %H:%M UTC')"
+            echo "Groesse: $(du -h dist/reisekosten.apk | cut -f1)"
+            echo "SHA256:  $(sha256sum dist/reisekosten.apk | cut -d' ' -f1)"
+          } > dist/APK-INFO.txt
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f dist/reisekosten.apk dist/APK-INFO.txt
+          if git diff --cached --quiet; then
+            echo "Keine Aenderung an der APK."
+          else
+            git commit -m "APK aus Lauf #${{ github.run_number }} [skip ci]"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
